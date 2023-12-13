@@ -1,4 +1,4 @@
-use std::{io::{stdin, Read}, fmt::Write, fs, process::Command, os::unix::process::CommandExt};
+use std::{io::{stdin, Read}, fmt::Write, fs, process::Command, os::unix::process::CommandExt, env};
 
 fn main() {
     let data = {
@@ -38,21 +38,22 @@ fn main() {
         dep
     };
 
-    generate(&dep, &data).unwrap();
+    let path = format!("{}/rust_quickie", env::var("HOME").unwrap());
+    generate(&path, &dep, &data).unwrap();
 
     let mut command = Command::new("cargo");
     command.arg("run");
-    command.current_dir("./_rust_quickie/");
+    command.current_dir(&path);
     let _ = command.spawn().unwrap().wait();
 
-    fs::remove_dir_all("./_rust_quickie").unwrap();
+    fs::remove_dir_all(&path).unwrap();
 }
 
 
 
-fn generate(deps: &str, all: &str) -> std::io::Result<()> {
-    fs::create_dir("_rust_quickie")?;
-    fs::write("_rust_quickie/Cargo.toml", format!(r#"
+fn generate(path: &str, deps: &str, all: &str) -> std::io::Result<()> {
+    fs::create_dir(&path).unwrap();
+    fs::write(format!("{path}/Cargo.toml"), format!(r#"
     [package]
     name = "rust-quickie"
     version = "0.1.0"
@@ -62,7 +63,7 @@ fn generate(deps: &str, all: &str) -> std::io::Result<()> {
     {deps}
     "#))?;
 
-    fs::create_dir("_rust_quickie/src")?;
-    fs::write("_rust_quickie/src/main.rs", format!("{all}"))?;
+    fs::create_dir(format!("{path}/src"))?;
+    fs::write(format!("{path}/src/main.rs"), format!("{all}"))?;
     Ok(())
 }
